@@ -1,0 +1,12 @@
+#!/usr/bin/env python
+
+module = AnsibleModule(
+    argument_spec = dict()
+)
+
+def main():
+    module.exit_json(changed=False)
+
+# import ansible-specific magic
+from ansible.module_utils.basic import *
+main()
