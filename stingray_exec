@@ -1,11 +1,57 @@
 #!/usr/bin/env python
 
-module = AnsibleModule(
-    argument_spec = dict()
-)
+import requests
+import json
+
+class StingrayExec(object):
+    def __init__(self, module):
+        self.module = module
+        self.state = module.params['state']
+        self.pool = module.params['pool']
+        self.port = int(module.params['port'])
+        self.stingray_host = module.params['stingray_host']
+        self.auth_string = module.params['auth_string']
+        self.host = module.params['host']
+        self.ssl_verify = module.params['ssl_verify']
+        self.allow_redirects = module.params['allow_redirects']
+
+    def base_url(self):
+        return "%(stingray_host)s/api/tm/1.0/config/active/pools/%(pool)s" % self.__dict__
+
+
+    def get_config(self):
+        headers = {'content-type': 'application/json'}
+        un, pwd = self.auth_string.split(':')
+
+        r = requests.get(
+                self.base_url(),
+                verify=self.ssl_verify,
+                headers=headers,
+                auth=(un, pwd),
+                allow_redirects=self.allow_redirects
+                )
+        return r.json()
+
 
 def main():
-    module.exit_json(changed=False)
+    module = AnsibleModule(
+        argument_spec = dict(
+            state = dict(required=True, choices=['enabled', 'disabled', 'draining', 'noop']),
+            pool = dict(required=True),
+            ssl_verify = dict(default=False),
+            allow_redirects = dict(default=True),
+            auth_string = dict(required=True),
+            host = dict(required=True),
+            stingray_host = dict(required=True),
+            port = dict(required=True)
+        )
+    )
+
+    stingray = StingrayExec(module)
+
+    module.exit_json(changed=False, config=module.params)
+    #module.exit_json(changed=False, config=stingray.get_config())
+    #module.exit_json(changed=False, config=stingray.base_url())
 
 # import ansible-specific magic
 from ansible.module_utils.basic import *
